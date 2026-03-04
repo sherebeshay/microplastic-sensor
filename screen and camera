@@ -102,3 +102,4 @@ splash.append(big_sprite)
 #     bitmap.dirty()
 #     display.refresh(minimum_frames_per_second=0)
 
+
