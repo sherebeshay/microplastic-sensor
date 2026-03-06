@@ -1,0 +1,74 @@
+import board, busio, time, pwmio, os, digitalio, displayio 
+import fourwire, adafruit_ili9341
+import adafruit_ov7670
+
+displayio.release_displays()
+# Set up the display (You must customize this block for your display!)
+mosi_pin = board.GP3
+clk_pin = board.GP2
+reset_pin = board.GP4
+cs_pin = board.GP1
+dc_pin = board.GP0
+
+spi = busio.SPI(clock=clk_pin, MOSI=mosi_pin)
+display_bus = fourwire.FourWire(spi, command=dc_pin, chip_select=cs_pin, reset=reset_pin)
+display = adafruit_ili9341.ILI9341(display_bus, width=320, height=240, rotation=0)
+display.auto_refresh = False
+
+
+#ov7670_ADDR = 0X21
+
+mclk = pwmio.PWMOut(board.GP20, frequency=13300000, duty_cycle = 32768)
+
+i2c = busio.I2C(board.GP9, board.GP8)
+
+d0 = board.GP12
+d1 = board.GP13
+d2 = board.GP14
+d3 = board.GP15
+d4 = board.GP16
+d5 = board.GP17
+d6 = board.GP18
+d7 = board.GP19
+
+datapins = [d0, d1, d2, d3, d4, d5, d6, d7]
+
+cam = adafruit_ov7670.OV7670(
+    i2c,
+    datapins,
+    clock = board.GP11,
+    href = board.GP21,
+    vsync = board.GP7,
+    )
+
+width = display.width
+height = display.height
+
+cam.size = adafruit_ov7670.OV7670_SIZE_DIV16
+
+buf = bytearray(2 * cam.width * cam.height)
+    
+cam.capture(buf)
+#cam.test_pattern = True
+bitmap = displayio.Bitmap(cam.width, cam.height, 65536)
+
+print(width, height, cam.width, cam.height)
+
+if bitmap is None:
+     raise SystemExit("Could not allocate a bitmap")
+
+g = displayio.Group(scale=8, x= 1 , y= 1)
+tg = displayio.TileGrid(bitmap,
+                        pixel_shader= displayio.ColorConverter(input_colorspace= displayio.Colorspace.RGB565_SWAPPED))
+g.append(tg)
+display.root_group = g
+
+
+display.auto_refresh = False
+while True:
+    start = time.monotonic()
+    cam.capture(bitmap)
+    bitmap.dirty()
+    display.refresh(minimum_frames_per_second=0)
+    print(time.monotonic()-start)
+    
