@@ -1,0 +1,7 @@
+import board, analogio, time
+
+pd = analogio.AnalogIn(board.A2)
+
+while True:
+    print (pd.value)
+    time.sleep(0.10)
