@@ -1,0 +1,32 @@
+import board, busio, time, pwmio
+
+ov7670_ADDR = 0X21
+
+mclk = pwmio.PWMOut(board.GP20, frequency=8000000, duty_cycle = 32768)
+
+i2c = busio.I2C(board.GP9, board.GP8)
+
+while not i2c.try_lock():
+    pass
+
+def write_reg(reg, val):
+    i2c.writeto(ov7670_ADDR, bytes([reg,val]))
+    
+    
+write_reg(0x12, 0x80)
+time.sleep(0.1)
+
+init_regs = [
+    (0x11, 0x01),
+    (0x6B, 0x4A),
+    (0x12, 0x14),
+    (0xBC, 0x00),
+]
+
+for reg, val in init_regs:
+    write_reg(reg,val)
+    
+print("ov7670 initialized")
+i2c.unlock()
+
+
